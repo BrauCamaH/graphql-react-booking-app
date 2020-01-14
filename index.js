@@ -11,6 +11,17 @@ const app = express();
 
 app.use(bodyParser.json());
 
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'Post,Get,Options');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+
+  next();
+});
+
 app.use(isAuth);
 
 app.use(
@@ -22,7 +33,7 @@ app.use(
   })
 );
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8000;
 
 mongoose
   .connect(
