@@ -2,7 +2,7 @@ import React from 'react';
 import Backdrop from '../Backdrop/Backdrop';
 import './Modal.css';
 const Modal = props => {
-  const { open, onCancel, onConfirm } = props;
+  const { open, onCancel, onConfirm, confirmText } = props;
   return (
     <>
       {open && (
@@ -21,7 +21,7 @@ const Modal = props => {
               )}
               {props.canConfirm && (
                 <button className='btn' onClick={onConfirm}>
-                  Confirm
+                  {confirmText || 'Confirm'}
                 </button>
               )}
             </section>

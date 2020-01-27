@@ -1,20 +1,27 @@
 import React, { useState, useContext, useEffect } from 'react';
 import AuthContext from '../context/auth-context';
 import Modal from '../components/Modal/Modal';
+import Spinner from '../components/Spinner/Spinner';
+
+import EventsList from '../components/Events/EventsList/EventsList';
 import './Events.css';
 const Events = () => {
   const context = useContext(AuthContext);
   const [events, setEvents] = useState([]);
   const [values, setValues] = useState({});
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [loanding, setLoading] = useState(false);
   const [openCreateModal, setOpenCreateModal] = useState(false);
 
   const token = context.token;
 
   const handleCancel = () => {
     setOpenCreateModal(false);
+    setSelectedEvent(null);
   };
 
   const fetchEvents = () => {
+    setLoading(true);
     const requestBody = {
       query: `
           query {
@@ -48,9 +55,11 @@ const Events = () => {
       })
       .then(resData => {
         setEvents(resData.data.events);
+        setLoading(false);
       })
       .catch(err => {
         console.log(err);
+        setLoading(false);
       });
   };
 
@@ -101,8 +110,19 @@ const Events = () => {
         return res.json();
       })
       .then(resData => {
-        //console.log(resData);
-        fetchEvents();
+        const updatedItems = [...events];
+        updatedItems.push({
+          _id: resData.data.createEvent._id,
+          title: resData.data.createEvent.title,
+          description: resData.data.createEvent.description,
+          date: resData.data.createEvent.date,
+          price: resData.data.createEvent.price,
+          creator: {
+            _id: context.userId
+          }
+        });
+
+        setEvents(updatedItems);
       })
       .catch(err => {
         console.log(err);
@@ -119,7 +139,10 @@ const Events = () => {
   };
 
   useEffect(fetchEvents, []);
-
+  const showDetailHandler = eventId => {
+    const currentEvent = events.find(e => e._id === eventId);
+    setSelectedEvent(currentEvent);
+  };
   return (
     <>
       <Modal
@@ -164,6 +187,24 @@ const Events = () => {
           </div>
         </form>
       </Modal>
+      {selectedEvent && (
+        <Modal
+          open={true}
+          title={selectedEvent.title}
+          canCancel
+          canConfirm
+          onCancel={handleCancel}
+          onConfirm={handleConfirm}
+          confirmText='Book'
+        >
+          <h1>{selectedEvent.title}</h1>
+          <h2>
+            ${selectedEvent.price} -{' '}
+            {new Date(selectedEvent.date).toLocaleDateString()}
+          </h2>
+          <p>{selectedEvent.description}</p>
+        </Modal>
+      )}
       {context.token && (
         <div className='events-control'>
           <p>Share your own Events</p>
@@ -177,13 +218,15 @@ const Events = () => {
           </button>
         </div>
       )}
-      <ul className='events__list'>
-        {events.map(event => (
-          <li key={event.id} className='events__list-item'>
-            {event.title}
-          </li>
-        ))}
-      </ul>
+      {loanding ? (
+        <Spinner />
+      ) : (
+        <EventsList
+          authUserId={context.userId}
+          events={events}
+          onViewDetail={showDetailHandler}
+        />
+      )}
     </>
   );
 };
